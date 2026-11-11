@@ -1,2 +1,25 @@
 # slupoll
-SLU/YouGov Poll
+
+Interactive dashboard for the SLU/YouGov Poll, a nonpartisan survey of Missouri voters run by Saint Louis University with YouGov.
+
+## Apps
+
+| App | Folder | Status |
+|---|---|---|
+| Question Search | `apps/question-search` | First version, runs locally |
+
+## Running the Question Search app
+
+Requires R with the `shiny`, `bslib`, `DT` and `dplyr` packages. From this folder:
+
+```r
+shiny::runApp("apps/question-search")
+```
+
+## Updating the question list
+
+The app reads `apps/question-search/data/question_catalog.csv`, which is built from the poll's Master Codebook:
+
+```sh
+Rscript data-raw/build_question_catalog.R
+```
