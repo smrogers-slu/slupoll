@@ -1,6 +1,6 @@
 # CLAUDE.md: SLU/YouGov Poll Dashboard
 
-R Shiny dashboard for the SLU/YouGov Poll (Missouri voters, 11 waves, June 2020 to August 2026), modeled on the CES dashboards. Owner: Steve Rogers (poll director, not a programmer). Day-to-day work: Aditi (student RA) with Claude. Hosting: Posit Connect Cloud (Steve sets it up; do not deploy). Targets: first live version January 2027, update February 2027.
+R Shiny dashboard for the SLU/YouGov Poll (Missouri voters, 11 waves, June 2020 to August 2026), modeled on the CES dashboards. Owner: Steve Rogers (poll director, not a programmer). Day-to-day work: Aditi (student RA) with Claude. Hosting: Posit Connect Cloud, published by Aditi (she said on November 10, 2026 that publishing is her job; the handoff had said Steve would set it up). Claude prepares the files but does not deploy. Targets: first live version January 2027, update February 2027.
 
 ## Where things are
 
@@ -32,7 +32,8 @@ R Shiny dashboard for the SLU/YouGov Poll (Missouri voters, 11 waves, June 2020 
 
 ## Repo layout
 
-- `apps/question-search/`: the Question Search app (`app.R`, `data/question_catalog.csv`, `www/` logo). Self-contained for deployment.
+- `apps/question-search/`: the Question Search app (`app.R`, `data/question_catalog.csv`, `www/` logo, `manifest.json`). Self-contained for deployment.
+- `manifest.json` tells Posit Connect Cloud which files and R packages the app needs. Regenerate it whenever the app's files or packages change: `rsconnect::writeManifest("apps/question-search", appPrimaryDoc = "app.R")`.
 - `data-raw/build_question_catalog.R`: rebuilds the catalog from the Master Codebook. Run from the repo root after the codebook changes. Set `SLUPOLL_LIBRARY` if the library is not at the default Dropbox path.
 
 Run the search app locally from the repo root: `shiny::runApp("apps/question-search")`.
