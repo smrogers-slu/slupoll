@@ -1439,13 +1439,19 @@
   },
   "files": {
     "app.R": {
-      "checksum": "caf16e29a05786cc810c707a16ca0aa8"
+      "checksum": "e9992e335c0389d92294e76798ed5285"
+    },
+    "data/published_graphs.csv": {
+      "checksum": "9fbbec40ec8581201cad8864df1c5c5e"
     },
     "data/question_catalog.csv": {
       "checksum": "2646148eb8c4972a0585d1734d4acd58"
     },
-    "www/slu-yougov-poll-logo.png": {
-      "checksum": "a6a6aafb66a21000876d2efc7212cc5e"
+    "data/question_results_notes.csv": {
+      "checksum": "edbf823bf7d0186c9e0a3766540b06c5"
+    },
+    "data/question_results.csv": {
+      "checksum": "bc70543cb36e9854384fff6cefb8b27f"
     }
   },
   "users": null

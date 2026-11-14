@@ -32,8 +32,11 @@ R Shiny dashboard for the SLU/YouGov Poll (Missouri voters, 11 waves, June 2020 
 
 ## Repo layout
 
-- `apps/question-search/`: the Question Search app (`app.R`, `data/question_catalog.csv`, `www/` logo, `manifest.json`). Self-contained for deployment.
+- `apps/question-search/`: the Question Search app (`app.R`, `data/question_catalog.csv`, `manifest.json`). Self-contained for deployment. It is unbranded for now (Aditi, November 14, 2026): the page shows the placeholder in `poll_name` at the top of `app.R` and no logo.
+- `branding/`: the SLU/YouGov Poll logo, kept out of the app folder so it is not published while the app is unbranded.
 - `manifest.json` tells Posit Connect Cloud which files and R packages the app needs. Regenerate it whenever the app's files or packages change: `rsconnect::writeManifest("apps/question-search", appPrimaryDoc = "app.R")`.
+- `data-raw/build_question_results.R`: computes each question's overall weighted result (the chart in the search app's drop-down) from the public `.sav` files. Writes `question_results.csv` and `question_results_notes.csv` (why a question has no chart) into the app's `data/`. Run it after the catalog script.
+- `data-raw/build_published_graphs.R`: lists the questions that have a published graph (from the Graph Information files) with a link to that wave's results page on the poll website. The library has no per-graph web addresses.
 - `data-raw/build_question_catalog.R`: rebuilds the catalog from the Master Codebook. Run from the repo root after the codebook changes. Set `SLUPOLL_LIBRARY` if the library is not at the default Dropbox path.
 
 Run the search app locally from the repo root: `shiny::runApp("apps/question-search")`.
