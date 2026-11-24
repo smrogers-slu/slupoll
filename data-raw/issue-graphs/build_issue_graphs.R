@@ -362,23 +362,32 @@ graphs <- lapply(unique(series$series_id), function(id) {
   )
 })
 
-page_data <- list(
+# One issue's part of the page. A page can hold one issue or several
+# (build_all_issue_graphs.R puts them all on one page with an Issue menu).
+issue_entry <- list(
   issue = issue,
-  built = format(Sys.Date(), "%B %d, %Y"),
-  min_n = min_n,
-  breakdowns = breakdowns,
-  axis_start = "2019-07-01", axis_end = "2027-01-01",
-  all_polls = lapply(seq_len(nrow(polls)), function(j)
-    list(wave = polls$wave_name[j], mid = format(polls$field_mid[j]))),
+  slug  = gsub("[^a-z0-9]+", "-", tolower(issue)),
   graphs = unname(graphs)
 )
 
-template <- paste(readLines(file.path(here, "issue_graphs_template.html"), encoding = "UTF-8"),
-                  collapse = "\n")
-json <- toJSON(page_data, auto_unbox = TRUE, null = "null", digits = NA)
-json <- gsub("</", "<\\/", json, fixed = TRUE)   # keep the data from closing the script tag
-page <- gsub("/*ISSUE*/", issue, template, fixed = TRUE)
-page <- sub("/*DATA*/", json, page, fixed = TRUE)
-out_file <- file.path(page_dir, "index.html")
-writeLines(page, out_file, useBytes = TRUE)
-message("Wrote ", length(graphs), " graphs to ", out_file)
+write_issue_page <- function(entries, title, out_file) {
+  page_data <- list(
+    built = format(Sys.Date(), "%B %d, %Y"),
+    min_n = min_n,
+    breakdowns = breakdowns,
+    axis_start = "2019-07-01", axis_end = "2027-01-01",
+    all_polls = lapply(seq_len(nrow(polls)), function(j)
+      list(wave = polls$wave_name[j], mid = format(polls$field_mid[j]))),
+    issues = unname(entries)
+  )
+  template <- paste(readLines(file.path(here, "issue_graphs_template.html"), encoding = "UTF-8"),
+                    collapse = "\n")
+  json <- toJSON(page_data, auto_unbox = TRUE, null = "null", digits = NA)
+  json <- gsub("</", "<\\/", json, fixed = TRUE)   # keep the data from closing the script tag
+  page <- gsub("/*TITLE*/", title, template, fixed = TRUE)
+  page <- sub("/*DATA*/", json, page, fixed = TRUE)
+  writeLines(page, out_file, useBytes = TRUE)
+  message("Wrote ", sum(sapply(entries, function(e) length(e$graphs))), " graphs to ", out_file)
+}
+
+write_issue_page(list(issue_entry), paste(issue, "Trend Graphs"), file.path(page_dir, "index.html"))
