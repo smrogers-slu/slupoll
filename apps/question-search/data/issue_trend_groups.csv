@@ -1,0 +1,32 @@
+"filter","group","group_order"
+"Party","Democrats",1
+"Party","Republicans",2
+"Party","Independents",3
+"Gender","Men",1
+"Gender","Women",2
+"Age","18-29",1
+"Age","30-44",2
+"Age","45-64",3
+"Age","65+",4
+"Race","White",1
+"Race","Black",2
+"Race","All non-white",3
+"Income","Under $50k",1
+"Income","$50k - $100k",2
+"Income","$100k or more",3
+"Education","HS or less",1
+"Education","Some college",2
+"Education","4-year college",3
+"Education","Post-grad",4
+"Community type","Rural",1
+"Community type","Urban",2
+"Community type","Suburban",3
+"Region","Kansas City Metro Area",1
+"Region","St. Louis Metro Area",2
+"Region","Northeast Missouri",3
+"Region","Northwest Missouri",4
+"Region","Southeast Missouri",5
+"Region","Southwest Missouri",6
+"Ideology","Liberal",1
+"Ideology","Moderate",2
+"Ideology","Conservative",3

@@ -1,8 +1,14 @@
-# Poll Question Search
+# Poll Dashboard
 #
-# A searchable table of every question asked in the poll, June 2020 to
-# August 2026. Modeled on the CES "Question Search" app (CES Files folder),
-# styled with the SLU design system (08 Style), and built to work on phones.
+# Two tabs, modeled on the CES apps (CES Files folder), styled with the SLU
+# design system (08 Style), and built to work on phones:
+#   Question Search  a searchable table of every question asked in the poll,
+#                    June 2020 to August 2026 (this file)
+#   Issue Trends     one graph per question over time, by issue, with a
+#                    demographic filter (R/issue_trends.R, which Shiny loads
+#                    automatically)
+#
+# The folder is still called question-search so the published link keeps working.
 #
 # Branding: the page does not name the poll for now (Aditi, November 14, 2026).
 # It shows the placeholder in `poll_name` below. To put the real name back,
@@ -16,6 +22,8 @@
 #                               (both from build_question_results.R)
 #   published_graphs.csv        questions that have a published graph
 #                               (build_published_graphs.R)
+#   issue_trend_*.csv, poll_dates.csv   the Issue Trends tab
+#                               (issue-graphs/build_all_issue_graphs.R)
 #
 # Run locally from the repo root:  shiny::runApp("apps/question-search")
 
@@ -180,6 +188,27 @@ app_css <- "
   table.dataTable .dtr-title { display: block; font-weight: 600; color: #00244D; }
   table.dataTable td.dtr-control:before { color: #003DA5; }
   footer.app-footer { color: #767676; font-size: .9rem; padding: 18px 0 28px; }
+  .nav-underline { margin-bottom: 14px; }
+  .nav-underline .nav-link { font-family: Oswald, sans-serif; font-size: 1.05rem; color: #00244D; }
+  .nav-underline .nav-link.active { color: #003DA5; }
+  .trend-controls .form-label, .trend-controls .control-label { font-family: Oswald, sans-serif;
+      font-weight: 500; color: #00244D; font-size: 1.05rem; }
+  .trend-controls .radio label, .trend-controls .form-check-label { line-height: 1.25; }
+  .trend-controls .shiny-options-group { max-height: 46vh; overflow-y: auto; }
+  @media (min-width: 992px) { .trend-controls .shiny-options-group { max-height: none; } }
+  .trend-hint { color: #767676; font-size: .88rem; margin: 4px 0 0; }
+  .trend-title { font-size: 1.3rem; color: #00244D; margin: 0 0 2px; }
+  .trend-showing { font-weight: 600; margin: 2px 0 0; }
+  .trend-asked { color: #767676; font-size: .92rem; margin: 0 0 6px; }
+  .trend-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .95rem; margin-bottom: 2px; }
+  .trend-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .trend-legend i { width: 18px; height: 4px; border-radius: 2px; display: inline-block; }
+  .trend-note { color: #555; font-size: .92rem; margin: 6px 0 0; }
+  .trend-details { margin-top: 10px; }
+  .trend-details summary { cursor: pointer; color: #003DA5; }
+  .trend-h3 { font-size: 1rem; color: #00244D; margin: 12px 0 4px; }
+  .trend-moe { padding-left: 18px; margin: 4px 0; }
+  .trend-moe .qid { color: #555; font-size: .85rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
   @media (max-width: 575.98px) {
     .app-header h1 { font-size: 1.1rem; }
     table.dataTable td { font-size: .95rem; }
@@ -194,16 +223,18 @@ ui <- page_fluid(
     tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
     tags$style(HTML(app_css))
   ),
-  title = paste(poll_name, "Question Search"),
+  title = paste(poll_name, "Dashboard"),
 
   div(class = "app-header",
     div(class = "container-lg",
       div(class = "poll-name", poll_name),
-      h1("Question Search")
+      h1("Dashboard")
     )
   ),
 
   div(class = "container-lg",
+   navset_underline(id = "tab",
+    nav_panel("Question Search",
     p(class = "intro",
       sprintf("Search the wording of every question asked in the poll, %s to %s.",
               first_wave, last_wave)),
@@ -235,12 +266,17 @@ ui <- page_fluid(
       "Question IDs are assigned fresh in each poll, so the same ID in two polls",
       "is not necessarily the same question."
     )
+    ),
+    nav_panel("Issue Trends", issue_trends_ui("trends"))
+   )
   )
 )
 
 # ---- Server ----------------------------------------------------------------
 
 server <- function(input, output, session) {
+
+  issue_trends_server("trends")
 
   # Wait until typing pauses briefly before searching (smoother on phones).
   search_terms <- debounce(reactive(input$search_terms), 300)

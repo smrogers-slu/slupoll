@@ -9,23 +9,19 @@
 #      for each demographic group (party, gender, age, race, income, education,
 #      community type, region, ideology), the weighted percent giving each answer.
 #   3. Checks those numbers against the published Issue Summary results.
-#   4. Writes an HTML page: the questions are listed on the left, with a
-#      demographic filter under them (one filter at a time), and the chosen
-#      question's graph on the right.
+#   4. Prepares the tables the dashboard's Issue Trends tab reads (see the end
+#      of this script). build_all_issue_graphs.R runs this for every issue and
+#      saves them in apps/question-search/data.
 #
 # Where things go:
-#   The page:   apps/issue-graphs/<issue>/index.html in this repo. It holds only
-#               rounded results for groups of 31 or more, so it is safe to publish.
-#               Posit Connect Cloud publishes it as a "Static Document".
+#   The dashboard tables: apps/question-search/data/issue_trend_*.csv. They hold
+#               only rounded results for groups of 31 or more, so they are safe to publish.
 #   The full results table and the check against published numbers go to
 #   Aditi Working/Issue Graphs/<Issue> in Dropbox (not into this public repo).
 #
-# Run it from the repo root. Set `issue_name` first to pick the issue:
-#   issue_name <- "Issue Ratings"
-#   source("data-raw/issue-graphs/build_issue_graphs.R")
-# or from the Terminal:  Rscript data-raw/issue-graphs/build_issue_graphs.R "Issue Ratings"
-# With no issue given it builds Abortion. A new issue needs its own
-# "series - <Issue>.csv" file in data-raw/issue-graphs.
+# Normally run through build_all_issue_graphs.R (from the repo root). To check
+# one issue on its own:  Rscript data-raw/issue-graphs/build_issue_graphs.R "Issue Ratings"
+# A new issue needs its own "series - <Issue>.csv" file in data-raw/issue-graphs.
 #
 # Series file columns:
 #   variable  the question ID. When a poll asked two halves of the sample the
@@ -54,10 +50,9 @@ issue <- if (exists("issue_name")) issue_name else if (length(args)) args[1] els
 suppressPackageStartupMessages({
   library(haven)
   library(dplyr)
-  library(jsonlite)
 })
 
-here <- file.path("data-raw", "issue-graphs")   # series files and the page template
+here <- file.path("data-raw", "issue-graphs")   # the series files
 if (!dir.exists(here)) stop("Run this script from the repo root (could not find ", here, ").")
 work_dir <- Sys.getenv("SLUPOLL_WORKING",
                        unset = path.expand("~/Dropbox/Dashboard/Aditi Working"))
@@ -66,9 +61,6 @@ library_dir <- Sys.getenv("SLUPOLL_LIBRARY",
 # Full results and checks (not published).
 out_dir <- file.path(work_dir, "Issue Graphs", issue)
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
-# The published page, e.g. apps/issue-graphs/issue-ratings/index.html
-page_dir <- file.path("apps", "issue-graphs", gsub("[^a-z0-9]+", "-", tolower(issue)))
-dir.create(page_dir, showWarnings = FALSE, recursive = TRUE)
 
 min_n <- 31
 
@@ -311,83 +303,65 @@ collapse_note <- function(spec) {
   paste0(toupper(substr(out, 1, 1)), substr(out, 2, nchar(out)))
 }
 
-graphs <- lapply(unique(series$series_id), function(id) {
+# ---- Tables for the dashboard's Issue Trends tab ------------------------------
+# Three tables per issue, combined across issues by build_all_issue_graphs.R
+# and saved in apps/question-search/data. Only rounded percents for groups of
+# at least `min_n` go into the app; hidden points have a blank percent.
+
+issue_questions <- list()
+issue_polls     <- list()
+for (k in seq_along(unique(series$series_id))) {
+  id <- unique(series$series_id)[k]
   rows <- series[series$series_id == id, ] |>
     left_join(polls, by = "wave_code") |> arrange(field_mid) |>
     mutate(first_id = sub("\\+.*$", "", variable), pooled = grepl("+", variable, fixed = TRUE)) |>
     left_join(wording, by = c("wave_name", "first_id" = "variable")) |>
     mutate(moe_num = suppressWarnings(as.numeric(moe)))
+  r <- results[results$series_id == id, ]
+  all_n <- r[r$group == "All voters" & r$category_order == 1, ]
+  rows$n_all    <- all_n$n[match(rows$wave_code, all_n$wave_code)]
+  rows$sample_n <- all_n$sample_n[match(rows$wave_code, all_n$wave_code)]
+  rows$partial  <- !rows$pooled & rows$n_all < 0.75 * rows$sample_n
   # Each half of a combined split sample has its own margin of error in the codebook.
   arm_moe <- function(v, wave) {
     ids <- strsplit(v, "+", fixed = TRUE)[[1]]
     m <- wording$moe[wording$wave_name == wave & wording$variable %in% ids]
     paste(sprintf("plus or minus %s", m), collapse = " and ")
   }
-  r <- results[results$series_id == id, ]
-  all_n <- r[r$group == "All voters" & r$category_order == 1, ]
-  rows$n_all    <- all_n$n[match(rows$wave_code, all_n$wave_code)]
-  rows$sample_n <- all_n$sample_n[match(rows$wave_code, all_n$wave_code)]
-  cats <- unique(r$category[order(r$category_order)])
-  # Results for every group: one entry per poll (in poll order) of
-  # [number asked, percent for each answer]; a percent is null when hidden.
-  by_group <- lapply(split(r, r$group), function(g) {
-    lapply(rows$wave_code, function(wc) {
-      x <- g[g$wave_code == wc, ][order(g$category_order[g$wave_code == wc]), ]
-      c(list(x$n[1]), lapply(seq_len(nrow(x)), function(k) if (x$shown[k]) round(100 * x$share[k]) else NULL))
-    })
-  })
-  partial <- rows[!rows$pooled & rows$n_all < 0.75 * rows$sample_n, ]
-  list(
-    id = id,
-    title = rows$title[1],
-    collapse_note = collapse_note(rows$collapse[1]),
+  partial <- rows[rows$partial, ]
+  note_or_blank <- function(x) if (is.null(x)) "" else x
+  issue_questions[[k]] <- data.frame(
+    issue = issue, series_id = id, question_order = k, title = rows$title[1],
+    # Wording is shown once, as asked in the latest poll.
+    wording = rows$wording[nrow(rows)],
+    categories = paste(unique(r$category[order(r$category_order)]), collapse = "|"),
+    collapse_note = note_or_blank(collapse_note(rows$collapse[1])),
     pooled_note = if (any(rows$pooled)) paste0(
       paste(rows$wave_name[rows$pooled], collapse = " and "),
-      " asked this question of two halves of the sample under two question IDs; the halves are combined here.") else NULL,
+      " asked this question of two halves of the sample under two question IDs; the halves are combined here.") else "",
     partial_note = if (nrow(partial)) paste0(
       "Asked of only part of the sample in ",
       paste(sprintf("%s (%s of %s people)", partial$wave_name, format(partial$n_all, big.mark = ","),
-                    format(partial$sample_n, big.mark = ",")), collapse = ", "), ".") else NULL,
-    # Wording is shown once, as asked in the latest poll.
-    wording = rows$wording[nrow(rows)],
-    polls = lapply(seq_len(nrow(rows)), function(j) list(
-      wave = rows$wave_name[j], variable = gsub("+", " and ", rows$variable[j], fixed = TRUE),
-      dates = rows$field_label[j], mid = format(rows$field_mid[j]), wording = rows$wording[j],
-      moe = if (rows$pooled[j]) NULL else rows$moe_num[j],
-      moe_text = if (rows$pooled[j]) paste0("not listed for the combined halves (",
-                   arm_moe(rows$variable[j], rows$wave_name[j]), " points for each half)") else NULL,
-      partial = !rows$pooled[j] && rows$n_all[j] < 0.75 * rows$sample_n[j])),
-    categories = I(cats),
-    data = by_group
-  )
-})
-
-# One issue's part of the page. A page can hold one issue or several
-# (build_all_issue_graphs.R puts them all on one page with an Issue menu).
-issue_entry <- list(
-  issue = issue,
-  slug  = gsub("[^a-z0-9]+", "-", tolower(issue)),
-  graphs = unname(graphs)
-)
-
-write_issue_page <- function(entries, title, out_file) {
-  page_data <- list(
-    built = format(Sys.Date(), "%B %d, %Y"),
-    min_n = min_n,
-    breakdowns = breakdowns,
-    axis_start = "2019-07-01", axis_end = "2027-01-01",
-    all_polls = lapply(seq_len(nrow(polls)), function(j)
-      list(wave = polls$wave_name[j], mid = format(polls$field_mid[j]))),
-    issues = unname(entries)
-  )
-  template <- paste(readLines(file.path(here, "issue_graphs_template.html"), encoding = "UTF-8"),
-                    collapse = "\n")
-  json <- toJSON(page_data, auto_unbox = TRUE, null = "null", digits = NA)
-  json <- gsub("</", "<\\/", json, fixed = TRUE)   # keep the data from closing the script tag
-  page <- gsub("/*TITLE*/", title, template, fixed = TRUE)
-  page <- sub("/*DATA*/", json, page, fixed = TRUE)
-  writeLines(page, out_file, useBytes = TRUE)
-  message("Wrote ", sum(sapply(entries, function(e) length(e$graphs))), " graphs to ", out_file)
+                    format(partial$sample_n, big.mark = ",")), collapse = ", "), ".") else "")
+  issue_polls[[k]] <- data.frame(
+    issue = issue, series_id = id, wave_code = rows$wave_code, wave_name = rows$wave_name,
+    question_id = gsub("+", " and ", rows$variable, fixed = TRUE),
+    moe_text = ifelse(rows$pooled,
+                      paste0("not listed for the combined halves (",
+                             vapply(seq_len(nrow(rows)), function(j) arm_moe(rows$variable[j], rows$wave_name[j]), ""),
+                             " points for each half)"),
+                      ifelse(is.na(rows$moe_num), "not listed in the codebook",
+                             paste0("plus or minus ", rows$moe_num, " points",
+                                    ifelse(rows$partial, " (asked of part of the sample)", "")))))
 }
+issue_questions <- bind_rows(issue_questions)
+issue_polls     <- bind_rows(issue_polls)
 
-write_issue_page(list(issue_entry), paste(issue, "Trend Graphs"), file.path(page_dir, "index.html"))
+issue_results <- results |>
+  transmute(issue = issue, series_id, wave_code,
+            filter = ifelse(group == "All voters", "", sub("\\|.*$", "", group)),
+            group  = sub("^.*\\|", "", group),
+            category, category_order,
+            percent = ifelse(shown, round(100 * share), NA_real_),
+            n_asked = n)
+message("Prepared ", nrow(issue_questions), " ", issue, " questions for the dashboard.")
