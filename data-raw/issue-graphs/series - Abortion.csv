@@ -1,0 +1,27 @@
+series_id,title,wave_code,variable,collapse,why_grouped
+legal_8wk,Legal abortion in the first 8 weeks of pregnancy,STLU0006,POLS027,,"Issue Summary Manifest: same row label in the same section of the Abortion summary (ABO-S1T1 and ABO-S1T2); same answer options"
+legal_8wk,Legal abortion in the first 8 weeks of pregnancy,STLU0015,POLS025,,"Issue Summary Manifest: same row label in the same section of the Abortion summary (ABO-S1T1 and ABO-S1T2); same answer options"
+legal_12wk,Legal abortion in the first 12 weeks of pregnancy,STLU0015,POLS026,,Asked in one poll only
+legal_15wk,Legal abortion in the first 15 weeks of pregnancy,STLU0006,POLS028,,"Issue Summary Manifest: same row label in the same section of the Abortion summary (ABO-S1T1 and ABO-S1T2); same answer options"
+legal_15wk,Legal abortion in the first 15 weeks of pregnancy,STLU0015,POLS027,,"Issue Summary Manifest: same row label in the same section of the Abortion summary (ABO-S1T1 and ABO-S1T2); same answer options"
+legal_rape,Legal abortion in cases of rape,STLU0006,POLS029,,"Issue Summary Manifest: same row label in the same section of the Abortion summary (ABO-S1T1 and ABO-S1T2); same answer options"
+legal_rape,Legal abortion in cases of rape,STLU0015,POLS028,,"Issue Summary Manifest: same row label in the same section of the Abortion summary (ABO-S1T1 and ABO-S1T2); same answer options"
+legal_incest,Legal abortion in cases of incest,STLU0006,POLS030,,"Issue Summary Manifest: same row label in the same section of the Abortion summary (ABO-S1T1 and ABO-S1T2); same answer options"
+legal_incest,Legal abortion in cases of incest,STLU0015,POLS029,,"Issue Summary Manifest: same row label in the same section of the Abortion summary (ABO-S1T1 and ABO-S1T2); same answer options"
+legal_life,Legal abortion when the woman's life is endangered,STLU0006,POLS031,,"Issue Summary Manifest: same row label in the same section of the Abortion summary (ABO-S1T1 and ABO-S1T2); same answer options"
+legal_life,Legal abortion when the woman's life is endangered,STLU0015,POLS030,,"Issue Summary Manifest: same row label in the same section of the Abortion summary (ABO-S1T1 and ABO-S1T2); same answer options"
+legal_minor,Legal abortion when a minor does not have a parent's consent,STLU0015,POLS031,,Asked in one poll only
+legal_disability,Legal abortion when the baby is likely to have a disability,STLU0006,POLS032,,"Issue Summary Manifest: same row label in the same section of the Abortion summary (ABO-S1T1 and ABO-S1T2); same answer options"
+legal_disability,Legal abortion when the baby is likely to have a disability,STLU0015,POLS032,,"Issue Summary Manifest: same row label in the same section of the Abortion summary (ABO-S1T1 and ABO-S1T2); same answer options"
+legal_lifeexp,Legal abortion when the baby has little or no life expectancy,STLU0006,POLS033,,"Issue Summary Manifest: same row label in the same section of the Abortion summary (ABO-S1T1 and ABO-S1T2); same answer options"
+legal_lifeexp,Legal abortion when the baby has little or no life expectancy,STLU0015,POLS033,,"Issue Summary Manifest: same row label in the same section of the Abortion summary (ABO-S1T1 and ABO-S1T2); same answer options"
+legal_any,Legal abortion for any reason,STLU0006,POLS034,,"Issue Summary Manifest: same row label in the same section of the Abortion summary (ABO-S1T1 and ABO-S1T2); same answer options"
+legal_any,Legal abortion for any reason,STLU0015,POLS034,,"Issue Summary Manifest: same row label in the same section of the Abortion summary (ABO-S1T1 and ABO-S1T2); same answer options"
+amend3_2026,2026 Amendment 3 ballot proposal,STLU0015,POLS024,,"Combined Graphs (Amendment 3 Feb vs Aug, 07 Handoffs, November 7, 2026) compares these two; same wording and answer options"
+amend3_2026,2026 Amendment 3 ballot proposal,STLU0016,POLS028,,"Combined Graphs (Amendment 3 Feb vs Aug, 07 Handoffs, November 7, 2026) compares these two; same wording and answer options"
+amend_2024_aug,August 2024 abortion amendment ballot proposal,STLU0012,POLS035,,Not linked to February 2024 in any library source (open item)
+amend_2024_feb,February 2024 abortion amendment ballot proposal,STLU0011,POLS035,,Not linked to August 2024 in any library source (open item)
+reverse_ban,Ballot initiative to reverse Missouri's abortion ban,STLU0006,POLS036,,Asked in one poll only
+roe_ruling,Agree with the Supreme Court overturning Roe v. Wade,STLU0006,POLS026,Agree=Strongly Agree+Agree|Disagree=Disagree+Strongly Disagree|Not sure=Not sure,Asked in one poll only; four-point scale collapsed to top two and bottom two (05 Analysis Conventions section 4)
+prosecute,Prosecute a Missouri woman for an abortion in another state,STLU0006,POLS035,,Asked in one poll only
+prohibit_8wk,State should prohibit abortions after 8 weeks of pregnancy,STLU0003,POLS024,,Asked in one poll only
