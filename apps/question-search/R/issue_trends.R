@@ -55,6 +55,25 @@ questions_for <- function(issue) {
   setNames(q$series_id, q$title)
 }
 
+# Short names for issues in links, e.g. "Issue Ratings" -> "issue-ratings".
+issue_slug <- function(x) gsub("[^a-z0-9]+", "-", tolower(x))
+
+# Links to a view look like
+#   .../#issue=issue-ratings&q=race_relations&by=Race&g=Black
+# This reads one into a list (NULL when the link has no issue in it).
+read_trend_link <- function(hash) {
+  if (is.null(hash) || !nzchar(hash)) return(NULL)
+  parts <- parseQueryString(sub("^#", "", hash))
+  issue <- trend_issues[issue_slug(trend_issues) == (parts$issue %||% "")]
+  if (length(issue) != 1) return(NULL)
+  list(issue = issue, q = parts$q %||% "", by = parts$by %||% "", g = parts$g %||% "")
+}
+trend_link <- function(issue, q, by, g) {
+  enc <- function(x) URLencode(x, reserved = TRUE)
+  paste0("#issue=", issue_slug(issue), "&q=", enc(q),
+         if (nzchar(by)) paste0("&by=", enc(by), "&g=", enc(g)) else "")
+}
+
 list_and <- function(x) {
   if (length(x) < 3) paste(x, collapse = " and ")
   else paste0(paste(x[-length(x)], collapse = ", "), " and ", x[length(x)])
@@ -87,6 +106,12 @@ issue_trends_ui <- function(id) {
       )),
       card(card_body(
         uiOutput(ns("header")),
+        # Copies the address bar, which always holds a link to the current view.
+        tags$button(type = "button", class = "btn btn-link trend-copy",
+          onclick = paste0("var b=this; navigator.clipboard.writeText(location.href).then(",
+                           "function(){b.textContent='Link copied';",
+                           "setTimeout(function(){b.textContent='Copy a link to this graph';},2000);});"),
+          "Copy a link to this graph"),
         plotlyOutput(ns("plot"), height = "380px"),
         uiOutput(ns("notes")),
         tags$details(class = "trend-details",
@@ -110,13 +135,38 @@ issue_trends_ui <- function(id) {
 
 # ---- Server -------------------------------------------------------------------
 
-issue_trends_server <- function(id) {
+# `active` is TRUE while the Issue Trends tab is showing; the link in the
+# address bar only follows this tab then.
+issue_trends_server <- function(id, active = reactive(TRUE)) {
   moduleServer(id, function(input, output, session) {
+
+    # ---- Opening a link to a view -------------------------------------------
+    # The link's question and group are applied once the menus have caught up
+    # (choosing an issue resets the question list, and a filter its groups).
+    pending <- reactiveValues(q = NULL, g = NULL)
+    link_read <- reactiveVal(FALSE)
+    observeEvent(session$clientData$url_hash, {
+      link <- read_trend_link(session$clientData$url_hash)
+      if (!is.null(link)) {
+        pending$q <- link$q
+        pending$g <- link$g
+        if (identical(link$issue, input$issue)) {
+          if (link$q %in% questions_for(link$issue)) updateRadioButtons(session, "question", selected = link$q)
+          pending$q <- NULL
+        } else {
+          updateSelectInput(session, "issue", selected = link$issue)
+        }
+        if (link$by %in% trend_filters) updateSelectInput(session, "filter_by", selected = link$by)
+      }
+      link_read(TRUE)
+    }, once = TRUE)
 
     # A new issue lists its own questions.
     observeEvent(input$issue, {
       ch <- questions_for(input$issue)
-      updateRadioButtons(session, "question", choices = ch, selected = ch[1])
+      sel <- if (!is.null(pending$q) && pending$q %in% ch) pending$q else ch[1]
+      pending$q <- NULL
+      updateRadioButtons(session, "question", choices = ch, selected = sel)
     }, ignoreInit = TRUE)
 
     # A new filter lists its own groups, labeled with the filter's name.
@@ -124,8 +174,19 @@ issue_trends_server <- function(id) {
       if (nzchar(input$filter_by)) {
         g <- trend_groups[trend_groups$filter == input$filter_by, ]
         g <- g$group[order(g$group_order)]
-        updateSelectInput(session, "group", label = input$filter_by, choices = g, selected = g[1])
+        sel <- if (!is.null(pending$g) && pending$g %in% g) pending$g else g[1]
+        pending$g <- NULL
+        updateSelectInput(session, "group", label = input$filter_by, choices = g, selected = sel)
       }
+    })
+
+    # ---- Keeping the address bar's link up to date ----------------------------
+    observe({
+      req(link_read(), active(), input$issue, input$question)
+      by <- input$filter_by %||% ""
+      g  <- if (nzchar(by)) req(input$group) else ""
+      req(input$question %in% questions_for(input$issue))
+      updateQueryString(trend_link(input$issue, input$question, by, g), mode = "replace")
     })
 
     # Everything about the chosen question and group.

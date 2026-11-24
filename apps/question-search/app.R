@@ -205,6 +205,7 @@ app_css <- "
   .trend-legend i { width: 18px; height: 4px; border-radius: 2px; display: inline-block; }
   .trend-note { color: #555; font-size: .92rem; margin: 6px 0 0; }
   .trend-details { margin-top: 10px; }
+  .trend-copy { padding: 0; font-size: .92rem; text-decoration: none; }
   .trend-details summary { cursor: pointer; color: #003DA5; }
   .trend-h3 { font-size: 1rem; color: #00244D; margin: 12px 0 4px; }
   .trend-moe { padding-left: 18px; margin: 4px 0; }
@@ -276,7 +277,16 @@ ui <- page_fluid(
 
 server <- function(input, output, session) {
 
-  issue_trends_server("trends")
+  # A link to an Issue Trends view (it has "#issue=" in it) opens that tab.
+  observeEvent(session$clientData$url_hash, {
+    if (grepl("issue=", session$clientData$url_hash %||% "", fixed = TRUE))
+      nav_select("tab", "Issue Trends")
+  }, once = TRUE)
+  issue_trends_server("trends", active = reactive(identical(input$tab, "Issue Trends")))
+  # On the Question Search tab the address bar goes back to the plain link.
+  observeEvent(input$tab, {
+    if (identical(input$tab, "Question Search")) updateQueryString("#", mode = "replace")
+  }, ignoreInit = TRUE)
 
   # Wait until typing pauses briefly before searching (smoother on phones).
   search_terms <- debounce(reactive(input$search_terms), 300)

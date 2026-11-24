@@ -2049,7 +2049,7 @@
   },
   "files": {
     "app.R": {
-      "checksum": "56a794abef400eb18f6f29e06c41b08f"
+      "checksum": "778b5425df55cc6d0736cf079820da21"
     },
     "data/issue_trend_groups.csv": {
       "checksum": "b222f15c05cbb9da6572fbd794af3369"
@@ -2079,7 +2079,7 @@
       "checksum": "bc70543cb36e9854384fff6cefb8b27f"
     },
     "R/issue_trends.R": {
-      "checksum": "6a6ad784f8bbbc981465f3f9a635ea7c"
+      "checksum": "f7dc282d5aad5cd65e1abfffa361e473"
     }
   },
   "users": null
