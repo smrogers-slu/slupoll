@@ -16,3 +16,12 @@ for (issue_name in issues) {
   entries[[issue_name]] <- issue_entry
 }
 write_issue_page(entries, "Issue Trend Graphs", file.path("apps", "issue-graphs", "index.html"))
+
+# Posit Connect Cloud needs a manifest.json next to the page it publishes.
+# It lists the page files with a checksum, so it must be rewritten every time
+# the pages change. One for the combined page, and one for each issue's page.
+rsconnect::writeManifest(file.path("apps", "issue-graphs"), appPrimaryDoc = "index.html")
+for (e in entries) {
+  rsconnect::writeManifest(file.path("apps", "issue-graphs", e$slug), appPrimaryDoc = "index.html")
+}
+message("Updated manifest.json files for Posit Connect Cloud.")
